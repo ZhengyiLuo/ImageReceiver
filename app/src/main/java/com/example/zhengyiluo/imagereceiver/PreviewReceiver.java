@@ -11,9 +11,6 @@ import java.io.OutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * Created by ZhengyiLuo on 1/2/16.
@@ -27,35 +24,37 @@ public class PreviewReceiver implements Runnable {
     byte[] buffer = new byte[99999];
     Bitmap b;
     boolean receiveing = true;
+    String ip;
     OutputStream outputStream;
     DatagramSocket s;
 
-    public PreviewReceiver(MainActivity mActivity) {
+
+    public PreviewReceiver(MainActivity mActivity, String ip) {
         this.mActivity = mActivity;
+        this.ip = "192.168.129.212";
+
     }
 
 
     @Override
     public void run() {
-
         try {
 
-            Log.d(mActivity.TAG, "Start");
-            // Log.d(mActivity.TAG, "IP: " + getIpAddress());
+//            Log.d(mActivity.TAG, "Start");
+//            Log.d(mActivity.TAG, "IP: ");
 
 
             /**
              * Create a server socket and wait for client connections. This
              * call blocks until a connection is accepted from a client
              */
-            InetAddress serveraddr = InetAddress.getByName("192.168.49.226");
+            InetAddress serveraddr = InetAddress.getByName(ip);
             s = new DatagramSocket(port, serveraddr);
-
             try {
                 /**
                  * If this code is reached, a client has connected and transferred data
                  */
-//                Log.d(mActivity.TAG, "We are receiving");
+                Log.d(mActivity.TAG, "We are receiving");
 
                 copyFile();
                 b.recycle();
@@ -77,7 +76,6 @@ public class PreviewReceiver implements Runnable {
     }
 
     public boolean copyFile() {
-        Log.d(mActivity.TAG, "Getting File");
 
         int len, count = 0;
         try {
@@ -86,15 +84,15 @@ public class PreviewReceiver implements Runnable {
             //inputStream.read(buffer);
 
             while (receiveing) {
-                //     Log.d(mActivity.TAG, "Getting File Continusouly");
+                //    Log.d(mActivity.TAG, "Getting File Continusouly");
                 DatagramPacket p = new DatagramPacket(buffer, buffer.length);
                 s.receive(p);
                 byteArr = p.getData();
                 b = BitmapFactory.decodeByteArray(byteArr, 0, byteArr.length);
-                //    Log.d(mActivity.TAG, "ByteLength" + Integer.toString(byteArr.length) + "Byte Data" + Byte.toString(byteArr[99]));
-
-                mActivity.setBitmap(b);
-                // Thread.sleep(100);
+              // Log.d(mActivity.TAG, "ByteLength" + Integer.toString(byteArr.length));
+                Log.d(mActivity.TAG, "ByteLength" + Integer.toString(byteArr[99]));
+               mActivity.setBitmap(b);
+                //Thread.sleep(30);
             }
 
 
@@ -138,89 +136,6 @@ public class PreviewReceiver implements Runnable {
         return true;
     }
 
-    public String getMACAddress(String interfaceName) {
-        try {
-            List<NetworkInterface> interfaces = Collections
-                    .list(NetworkInterface.getNetworkInterfaces());
-
-            for (NetworkInterface intf : interfaces) {
-                if (interfaceName != null) {
-                    if (!intf.getName().equalsIgnoreCase(interfaceName))
-                        continue;
-                }
-                byte[] mac = intf.getHardwareAddress();
-                if (mac == null)
-                    return "";
-                StringBuilder buf = new StringBuilder();
-                for (int idx = 0; idx < mac.length; idx++)
-                    buf.append(String.format("%02X:", mac[idx]));
-                if (buf.length() > 0)
-                    buf.deleteCharAt(buf.length() - 1);
-                return buf.toString();
-            }
-        } catch (Exception ex) {
-        } // for now eat exceptions
-        return "";
-        /*
-         * try { // this is so Linux hack return
-         * loadFileAsString("/sys/class/net/" +interfaceName +
-         * "/address").toUpperCase().trim(); } catch (IOException ex) { return
-         * null; }
-         */
-    }
-
-    public String getIpAddress() {
-        try {
-            List<NetworkInterface> interfaces = Collections
-                    .list(NetworkInterface.getNetworkInterfaces());
-        /*
-         * for (NetworkInterface networkInterface : interfaces) { Log.v(TAG,
-         * "interface name " + networkInterface.getName() + "mac = " +
-         * getMACAddress(networkInterface.getName())); }
-         */
-
-            for (NetworkInterface intf : interfaces) {
-                if (!getMACAddress(intf.getName()).equalsIgnoreCase(
-                        null)) {
-                    // Log.v(TAG, "ignore the interface " + intf.getName());
-                    // continue;
-                }
-                if (!intf.getName().contains("p2p"))
-                    continue;
-
-                Log.v(mActivity.TAG,
-                        intf.getName() + "   " + getMACAddress(intf.getName()));
-
-                List<InetAddress> addrs = Collections.list(intf
-                        .getInetAddresses());
-
-                for (InetAddress addr : addrs) {
-                    // Log.v(TAG, "inside");
-
-                    if (!addr.isLoopbackAddress()) {
-                        // Log.v(TAG, "isnt loopback");
-                        String sAddr = addr.getHostAddress().toUpperCase();
-                        Log.v(mActivity.TAG, "ip=" + sAddr);
-
-
-                        if (true) {
-                            if (sAddr.contains("192.168.49.")) {
-                                Log.v(mActivity.TAG, "ip = " + sAddr);
-                                return sAddr;
-                            }
-                        }
-
-                    }
-
-                }
-            }
-
-        } catch (Exception ex) {
-            Log.v(mActivity.TAG, "error in parsing");
-        } // for now eat exceptions
-        Log.v(mActivity.TAG, "returning empty ip address");
-        return "";
-    }
 
 }
 
